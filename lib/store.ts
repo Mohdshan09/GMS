@@ -23,8 +23,12 @@ export interface AddMemberInput {
   trainerId: string | null;
 }
 
+export type AppRole = "developer" | "gym-owner";
+
 interface GymState extends SeedData {
   authUser: User | null;
+  viewRole: AppRole; // developer = platform owner (you); gym-owner = your customer
+  setViewRole: (r: AppRole) => void;
   // auth
   login: (email: string, password: string) => boolean;
   logout: () => void;
@@ -57,6 +61,9 @@ export const useGymStore = create<GymState>()(
     (set, get) => ({
       ...generateSeed(),
       authUser: null,
+      viewRole: "gym-owner",
+
+      setViewRole: (r) => set({ viewRole: r }),
 
       login: (email, password) => {
         if (email.trim().toLowerCase() === DEMO.email && password === DEMO.password) {
@@ -173,8 +180,8 @@ export const useGymStore = create<GymState>()(
     {
       name: "gym-demo-auth",
       storage: createJSONStorage(() => localStorage),
-      // Only persist the session; demo data regenerates fresh each load (resettable).
-      partialize: (s) => ({ authUser: s.authUser }),
+      // Only persist the session + role; demo data regenerates fresh each load (resettable).
+      partialize: (s) => ({ authUser: s.authUser, viewRole: s.viewRole }),
     }
   )
 );

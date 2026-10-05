@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Plus, Users } from "lucide-react";
+import { Check, Plus, Users, Lock, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,9 @@ export default function MembershipsPage() {
   const members = useGymStore((s) => s.members);
   const createPlan = useGymStore((s) => s.createPlan);
   const updatePlan = useGymStore((s) => s.updatePlan);
+  const viewRole = useGymStore((s) => s.viewRole);
+  const isDeveloper = viewRole === "developer";
+
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: "", price: "", features: "" });
 
@@ -38,9 +41,31 @@ export default function MembershipsPage() {
 
   return (
     <>
-      <PageHeader title="Memberships" subtitle="Your plans and subscribers">
-        <Button onClick={() => setOpen(true)}><Plus /> Create Plan</Button>
+      <PageHeader
+        title="Subscription Plans"
+        subtitle={isDeveloper
+          ? "Plans your gym-owner customers subscribe to"
+          : "Your platform subscription options"}
+      >
+        {isDeveloper && <Button onClick={() => setOpen(true)}><Plus /> Create Plan</Button>}
       </PageHeader>
+
+      {/* Role context banner */}
+      {isDeveloper ? (
+        <Card className="mb-4 border-primary/30 bg-primary/5">
+          <CardContent className="flex items-center gap-3 py-4 text-sm">
+            <ShieldCheck className="size-5 shrink-0 text-primary" />
+            <span><b>Developer view.</b> You define and price the plans every gym owner can subscribe to. Gym owners see these as read-only.</span>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="mb-4 bg-muted/40">
+          <CardContent className="flex items-center gap-3 py-4 text-sm text-muted-foreground">
+            <Lock className="size-5 shrink-0" />
+            <span>These plans are managed by your provider. Contact your account manager to change or upgrade your subscription.</span>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {plans.map((p, i) => (
@@ -65,33 +90,39 @@ export default function MembershipsPage() {
                 <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <Users className="size-4" /> {subscribers(p.id)} subscribers
                 </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    updatePlan(p.id, { active: !p.active });
-                    toast.success(p.active ? "Plan disabled" : "Plan enabled");
-                  }}
-                >
-                  {p.active ? "Disable" : "Enable"}
-                </Button>
+                {isDeveloper ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      updatePlan(p.id, { active: !p.active });
+                      toast.success(p.active ? "Plan disabled" : "Plan enabled");
+                    }}
+                  >
+                    {p.active ? "Disable" : "Enable"}
+                  </Button>
+                ) : (
+                  <Badge tone={p.active ? "success" : "muted"}>{p.active ? "Available" : "Unavailable"}</Badge>
+                )}
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <Dialog open={open} onClose={() => setOpen(false)} title="Create Plan" description="Add a new membership plan.">
-        <form onSubmit={submit} className="space-y-4">
-          <div className="space-y-1.5"><Label>Plan Name</Label><Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Elite" /></div>
-          <div className="space-y-1.5"><Label>Monthly Price (₹)</Label><Input type="number" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} placeholder="2999" /></div>
-          <div className="space-y-1.5"><Label>Features (one per line)</Label><Textarea value={form.features} onChange={(e) => setForm((f) => ({ ...f, features: e.target.value }))} placeholder={"Unlimited access\nPersonal training"} /></div>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button type="submit">Create</Button>
-          </div>
-        </form>
-      </Dialog>
+      {isDeveloper && (
+        <Dialog open={open} onClose={() => setOpen(false)} title="Create Plan" description="Add a new subscription plan.">
+          <form onSubmit={submit} className="space-y-4">
+            <div className="space-y-1.5"><Label>Plan Name</Label><Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Elite" /></div>
+            <div className="space-y-1.5"><Label>Monthly Price (₹)</Label><Input type="number" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} placeholder="2999" /></div>
+            <div className="space-y-1.5"><Label>Features (one per line)</Label><Textarea value={form.features} onChange={(e) => setForm((f) => ({ ...f, features: e.target.value }))} placeholder={"Unlimited access\nPersonal training"} /></div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button type="submit">Create</Button>
+            </div>
+          </form>
+        </Dialog>
+      )}
     </>
   );
 }
