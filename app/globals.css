@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 210 40% 98%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --primary: 20 90% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 24 70% 95%;
+  --accent-foreground: 222 47% 11%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 20 90% 50%;
+  --success: 142 71% 45%;
+  --warning: 38 92% 50%;
+  --danger: 0 72% 51%;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: 222 47% 7%;
+  --foreground: 210 40% 98%;
+  --card: 222 47% 10%;
+  --card-foreground: 210 40% 98%;
+  --primary: 22 92% 54%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 217 33% 17%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217 33% 15%;
+  --muted-foreground: 215 20% 65%;
+  --accent: 20 40% 16%;
+  --accent-foreground: 210 40% 98%;
+  --border: 217 33% 20%;
+  --input: 217 33% 20%;
+  --ring: 22 92% 54%;
+  --success: 142 71% 45%;
+  --warning: 38 92% 50%;
+  --danger: 0 72% 51%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-feature-settings: "rlig" 1, "calt" 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Athletic condensed display face for headings / hero copy */
+.font-display {
+  font-family: var(--font-display), "Oswald", sans-serif;
+  letter-spacing: 0.01em;
+}
+.heading-xl {
+  font-family: var(--font-display), "Oswald", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  line-height: 0.98;
+}
+.eyebrow {
+  font-family: var(--font-display), "Oswald", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+}
+
+/* Thin scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: hsl(var(--muted));
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, hsl(var(--background) / 0.5), transparent);
+  animation: shimmer 1.4s infinite;
+}
