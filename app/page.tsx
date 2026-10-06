@@ -301,9 +301,18 @@ function StatsBand() {
 /* ---------------- Pricing ---------------- */
 function Pricing({ onLogin }: { onLogin: () => void }) {
   const plans = [
-    { name: "Basic", price: "₹999", features: ["Gym access", "Basic equipment", "Member management"], popular: false },
-    { name: "Standard", price: "₹1,499", features: ["Everything in Basic", "Group classes", "Trainer consultation", "Attendance analytics"], popular: false },
-    { name: "Premium", price: "₹2,499", features: ["Unlimited access", "Personal training", "Community challenges", "Crowd Intelligence"], popular: true },
+    {
+      name: "Basic", price: "₹999", tagline: "Run the front desk", popular: false,
+      features: ["Up to 150 members", "Member management", "Attendance tracking", "Payment & dues tracking", "Email support"],
+    },
+    {
+      name: "Standard", price: "₹1,499", tagline: "Grow with full insight", popular: false,
+      features: ["Everything in Basic", "Up to 250 members", "Trainers & class scheduling", "Equipment inventory", "Attendance & revenue analytics", "Up to 3 staff accounts"],
+    },
+    {
+      name: "Premium", price: "₹2,499", tagline: "Full intelligence + engagement", popular: true,
+      features: ["Everything in Standard", "Unlimited members", "Crowd Intelligence suite", "Community feed & challenges", "Automated reminders & exports", "Dedicated account manager"],
+    },
   ];
   return (
     <section id="pricing" className="border-t bg-muted/30 py-20">
@@ -318,8 +327,19 @@ function Pricing({ onLogin }: { onLogin: () => void }) {
                 {p.popular && <Badge tone="primary">Most popular</Badge>}
               </div>
               <p className="mt-3 text-3xl font-bold">{p.price}<span className="text-sm font-normal text-muted-foreground">/mo</span></p>
+              <p className="mt-1 text-sm font-medium text-muted-foreground">{p.tagline}</p>
               <ul className="mt-5 space-y-2.5">
-                {p.features.map((f) => <Bullet key={f}>{f}</Bullet>)}
+                {p.features.map((f) => {
+                  if (f.toLowerCase().startsWith("everything in"))
+                    return <li key={f} className="pt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{f}</li>;
+                  const hero = /crowd intelligence|community/i.test(f);
+                  return (
+                    <li key={f} className={`flex items-start gap-2.5 text-sm ${hero ? "font-semibold text-primary" : ""}`}>
+                      <Check className={`mt-0.5 size-4 shrink-0 ${hero ? "text-primary" : "text-success"}`} />
+                      <span>{f}</span>
+                    </li>
+                  );
+                })}
               </ul>
               <Button className="mt-6 w-full" variant={p.popular ? "default" : "outline"} onClick={onLogin}>Choose {p.name}</Button>
             </Card>

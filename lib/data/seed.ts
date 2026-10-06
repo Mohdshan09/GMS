@@ -1,5 +1,5 @@
 import {
-  Attendance, Challenge, Comment, CommunityPost, CrowdSnapshot, Equipment,
+  Attendance, Challenge, Comment, CommunityPost, CrowdSnapshot, Customer, Equipment,
   EquipmentCategory, EquipmentCondition, GymClass, Gym, Member, MembershipPlan,
   Notification, Payment, PostType, Trainer, User,
 } from "@/lib/types";
@@ -23,8 +23,11 @@ const HOUR_CURVE: Record<number, number> = {
 
 export interface SeedData {
   gym: Gym;
-  admin: User;
-  plans: MembershipPlan[];
+  owner: User;       // the gym owner (your customer) — logs into the gym panel
+  developer: User;   // you — the platform owner, logs into the developer panel
+  plans: MembershipPlan[];      // the gym's OWN member plans (owner-managed)
+  saasPlans: MembershipPlan[];  // platform subscription tiers (developer-managed)
+  customers: Customer[];        // gyms subscribing to the platform
   trainers: Trainer[];
   members: Member[];
   payments: Payment[];
@@ -52,6 +55,14 @@ export interface SeedData {
     comments: number;
     challengeParticipation: number;
   };
+  devStats: {
+    totalGyms: number;
+    activeGyms: number;
+    trialGyms: number;
+    mrr: number;
+    churnRate: number;
+    newThisMonth: number;
+  };
 }
 
 function iso(d: Date) {
@@ -72,19 +83,86 @@ export function generateSeed(): SeedData {
     openHours: "Mon–Sat · 5:00 AM – 10:00 PM",
     logoText: "PH",
   };
-  const admin: User = {
-    id: "admin1",
-    name: "Shan Mohammed",
-    email: "admin@gymdemo.com",
-    role: "ADMIN",
+  const owner: User = {
+    id: "owner1",
+    name: "Rohan Kapoor",
+    email: "owner@gymdemo.com",
+    role: "owner",
+    avatarColor: AVATAR_COLORS[6],
+  };
+  const developer: User = {
+    id: "dev1",
+    name: "Mohammad Shan",
+    email: "developer@gymdemo.com",
+    role: "developer",
     avatarColor: AVATAR_COLORS[0],
   };
 
-  // --- Plans ---
+  // --- The gym's OWN membership plans (what the gym owner sells to members) ---
   const plans: MembershipPlan[] = [
-    { id: "plan_basic", name: "Basic", price: 999, active: true, features: ["Gym access", "Basic equipment"] },
-    { id: "plan_standard", name: "Standard", price: 1499, active: true, features: ["Gym access", "Group classes", "Trainer consultation"] },
-    { id: "plan_premium", name: "Premium", price: 2499, active: true, features: ["Unlimited access", "Personal training", "Group classes", "Community challenges"] },
+    {
+      id: "plan_basic",
+      name: "Basic",
+      tagline: "Train on your own",
+      price: 999,
+      active: true,
+      features: [
+        "Full gym floor & cardio access",
+        "Locker room access",
+        "1 free fitness assessment",
+      ],
+    },
+    {
+      id: "plan_standard",
+      name: "Standard",
+      tagline: "Most popular with members",
+      price: 1499,
+      active: true,
+      features: [
+        "Everything in Basic",
+        "All group classes (yoga, HIIT, spin)",
+        "Monthly trainer consultation",
+      ],
+    },
+    {
+      id: "plan_premium",
+      name: "Premium",
+      tagline: "The complete experience",
+      price: 2499,
+      active: true,
+      features: [
+        "Everything in Standard",
+        "Personal training sessions",
+        "Community & challenges access",
+        "2 guest passes / month",
+      ],
+    },
+  ];
+
+  // --- Platform subscription tiers (what YOU sell to gym owners) ---
+  const saasPlans: MembershipPlan[] = [
+    {
+      id: "saas_basic", name: "Basic", tagline: "Run the front desk", price: 999, active: true,
+      features: [
+        "Up to 150 members", "Member management", "Attendance check-in / out",
+        "Payment & dues tracking", "1 admin account", "Email support",
+      ],
+    },
+    {
+      id: "saas_standard", name: "Standard", tagline: "Grow with full insight", price: 1499, active: true,
+      features: [
+        "Everything in Basic", "Up to 250 members", "Trainers & class scheduling",
+        "Equipment inventory", "Attendance & revenue analytics", "Up to 3 staff accounts", "Priority support",
+      ],
+    },
+    {
+      id: "saas_premium", name: "Premium", tagline: "Full intelligence + engagement", price: 2499, active: true,
+      features: [
+        "Everything in Standard", "Unlimited members", "Crowd Intelligence suite",
+        "Community feed & challenges", "Advanced reports & CSV export",
+        "Automated expiry & payment reminders", "Dedicated account manager",
+      ],
+    },
   ];
 
   // --- Trainers ---
@@ -267,7 +345,7 @@ export function generateSeed(): SeedData {
   const comments: Comment[] = [];
   for (let i = 0; i < 30; i++) {
     const t = postTemplates[i % postTemplates.length];
-    const author = t.type === "ANNOUNCEMENT" ? admin : r.pick(members);
+    const author = t.type === "ANNOUNCEMENT" ? owner : r.pick(members);
     const createdAt = subDays(NOW, r.int(0, 10));
     const commentsCount = r.int(0, 12);
     posts.push({
@@ -364,6 +442,42 @@ export function generateSeed(): SeedData {
     };
   });
 
+  // --- Platform customers (gyms subscribing to your software) ---
+  const gymNames = [
+    "PowerHouse Fitness", "Iron Temple Gym", "FlexZone Studio", "Apex Athletics",
+    "Pulse Fitness Club", "Titan Strength", "CoreFit Arena", "Beast Mode Gym",
+    "Elevate Fitness", "Grind House", "Peak Performance", "Rep Republic",
+    "Olympus Gym", "Hustle Fitness",
+  ];
+  const cities = ["Bengaluru", "Mumbai", "Delhi", "Pune", "Hyderabad", "Chennai", "Jaipur", "Kolkata"];
+  const custStatuses: Customer["status"][] = ["active", "active", "active", "active", "active", "trial", "trial", "churned"];
+  const customers: Customer[] = gymNames.map((gn, i) => {
+    const plan = r.pick(saasPlans);
+    const status = i === 0 ? "active" : r.pick(custStatuses);
+    return {
+      id: `cust_${i + 1}`,
+      gymName: gn,
+      ownerName: i === 0 ? owner.name : `${r.pick(FIRST_NAMES)} ${r.pick(LAST_NAMES)}`,
+      city: r.pick(cities),
+      planId: plan.id,
+      status,
+      members: r.int(60, 240),
+      mrr: status === "churned" ? 0 : plan.price,
+      joinedAt: iso(subDays(NOW, r.int(10, 540))),
+    };
+  });
+  const activeGyms = customers.filter((c) => c.status === "active").length;
+  const trialGyms = customers.filter((c) => c.status === "trial").length;
+  const churned = customers.filter((c) => c.status === "churned").length;
+  const devStats = {
+    totalGyms: customers.length,
+    activeGyms,
+    trialGyms,
+    mrr: customers.reduce((s, c) => s + c.mrr, 0),
+    churnRate: Math.round((churned / customers.length) * 100),
+    newThisMonth: customers.filter((c) => differenceInCalendarDays(NOW, new Date(c.joinedAt)) <= 30).length,
+  };
+
   // --- Headline stats (demo-scale, matches sales script §33) ---
   const collected = payments.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0);
   const stats = {
@@ -382,8 +496,8 @@ export function generateSeed(): SeedData {
   };
 
   return {
-    gym, admin, plans, trainers, members, payments, classes, attendance,
-    dailyAttendance, posts, comments, challenges, crowdToday, crowdDaily,
-    equipment, notifications, stats,
+    gym, owner, developer, plans, saasPlans, customers, trainers, members,
+    payments, classes, attendance, dailyAttendance, posts, comments, challenges,
+    crowdToday, crowdDaily, equipment, notifications, stats, devStats,
   };
 }

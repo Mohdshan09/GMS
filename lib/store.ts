@@ -23,14 +23,10 @@ export interface AddMemberInput {
   trainerId: string | null;
 }
 
-export type AppRole = "developer" | "gym-owner";
-
 interface GymState extends SeedData {
   authUser: User | null;
-  viewRole: AppRole; // developer = platform owner (you); gym-owner = your customer
-  setViewRole: (r: AppRole) => void;
-  // auth
-  login: (email: string, password: string) => boolean;
+  // auth — returns the signed-in user's role, or null on failure
+  login: (email: string, password: string) => "owner" | "developer" | null;
   logout: () => void;
   resetDemo: () => void;
   // members
@@ -41,9 +37,12 @@ interface GymState extends SeedData {
   // payments
   recordPayment: (memberId: string, planId: string) => void;
   markPaymentStatus: (id: string, status: Payment["status"]) => void;
-  // plans
+  // gym member plans (owner)
   createPlan: (plan: Omit<MembershipPlan, "id">) => void;
   updatePlan: (id: string, patch: Partial<MembershipPlan>) => void;
+  // SaaS subscription plans (developer)
+  createSaasPlan: (plan: Omit<MembershipPlan, "id">) => void;
+  updateSaasPlan: (id: string, patch: Partial<MembershipPlan>) => void;
   // classes
   createClass: (c: Omit<GymClass, "id" | "booked" | "cancelled">) => void;
   cancelClass: (id: string) => void;
@@ -54,23 +53,26 @@ interface GymState extends SeedData {
   serviceEquipment: (id: string) => void;
 }
 
-const DEMO = { email: "admin@gymdemo.com", password: "demo123" };
+const PASSWORD = "demo123";
 
 export const useGymStore = create<GymState>()(
   persist(
     (set, get) => ({
       ...generateSeed(),
       authUser: null,
-      viewRole: "gym-owner",
-
-      setViewRole: (r) => set({ viewRole: r }),
 
       login: (email, password) => {
-        if (email.trim().toLowerCase() === DEMO.email && password === DEMO.password) {
-          set({ authUser: get().admin });
-          return true;
+        const e = email.trim().toLowerCase();
+        if (password !== PASSWORD) return null;
+        if (e === get().owner.email) {
+          set({ authUser: get().owner });
+          return "owner";
         }
-        return false;
+        if (e === get().developer.email) {
+          set({ authUser: get().developer });
+          return "developer";
+        }
+        return null;
       },
       logout: () => set({ authUser: null }),
       resetDemo: () => set({ ...generateSeed() }),
@@ -153,6 +155,12 @@ export const useGymStore = create<GymState>()(
       updatePlan: (id, patch) =>
         set({ plans: get().plans.map((p) => (p.id === id ? { ...p, ...patch } : p)) }),
 
+      createSaasPlan: (plan) =>
+        set({ saasPlans: [...get().saasPlans, { ...plan, id: `saas_${Date.now()}` }] }),
+
+      updateSaasPlan: (id, patch) =>
+        set({ saasPlans: get().saasPlans.map((p) => (p.id === id ? { ...p, ...patch } : p)) }),
+
       createClass: (c) =>
         set({
           classes: [...get().classes, { ...c, id: `class_${Date.now()}`, booked: 0, cancelled: false }],
@@ -180,8 +188,8 @@ export const useGymStore = create<GymState>()(
     {
       name: "gym-demo-auth",
       storage: createJSONStorage(() => localStorage),
-      // Only persist the session + role; demo data regenerates fresh each load (resettable).
-      partialize: (s) => ({ authUser: s.authUser, viewRole: s.viewRole }),
+      // Only persist the session; demo data regenerates fresh each load (resettable).
+      partialize: (s) => ({ authUser: s.authUser }),
     }
   )
 );

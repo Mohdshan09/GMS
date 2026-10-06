@@ -1,69 +1,63 @@
 "use client";
 
 import { useState } from "react";
-import { RotateCcw, ShieldCheck } from "lucide-react";
+import { RotateCcw, Code2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
-import { Segmented } from "@/components/ui/tabs";
+import { Avatar } from "@/components/ui/avatar";
 import { useGymStore } from "@/lib/store";
 import { toast } from "@/components/ui/toast";
 
 export default function SettingsPage() {
   const gym = useGymStore((s) => s.gym);
+  const user = useGymStore((s) => s.authUser);
   const resetDemo = useGymStore((s) => s.resetDemo);
-  const viewRole = useGymStore((s) => s.viewRole);
-  const setViewRole = useGymStore((s) => s.setViewRole);
-  const [toggles, setToggles] = useState({
-    expiry: true, payments: true, crowd: true, community: false,
-  });
-
-  const toggle = (k: keyof typeof toggles) =>
-    setToggles((t) => ({ ...t, [k]: !t[k] }));
+  const isDev = user?.role === "developer";
+  const [toggles, setToggles] = useState({ expiry: true, payments: true, crowd: true, community: false });
+  const toggle = (k: keyof typeof toggles) => setToggles((t) => ({ ...t, [k]: !t[k] }));
 
   return (
     <>
-      <PageHeader title="Settings" subtitle="Manage your gym configuration" />
-
-      {/* Role switcher (demo) */}
-      <Card className="mb-4 border-primary/30">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="size-4 text-primary" />
-            <CardTitle>Access Role (demo)</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="max-w-md text-sm text-muted-foreground">
-            Switch between the <b>Developer</b> view (you — manage subscription plans) and the <b>Gym Owner</b> view (your customer — read-only plans). Currently viewing as <b>{viewRole === "developer" ? "Developer" : "Gym Owner"}</b>.
-          </p>
-          <Segmented
-            value={viewRole}
-            onChange={(v) => { setViewRole(v); toast.success(`Now viewing as ${v === "developer" ? "Developer" : "Gym Owner"}`); }}
-            options={[{ label: "Gym Owner", value: "gym-owner" }, { label: "Developer", value: "developer" }]}
-          />
-        </CardContent>
-      </Card>
+      <PageHeader title="Settings" subtitle={isDev ? "Your platform account" : "Manage your gym configuration"} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* Account card */}
         <Card>
-          <CardHeader><CardTitle>Gym Profile</CardTitle></CardHeader>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              {isDev && <Code2 className="size-4 text-primary" />}
+              <CardTitle>{isDev ? "Developer Account" : "Gym Profile"}</CardTitle>
+            </div>
+          </CardHeader>
           <CardContent className="space-y-3">
-            <Field label="Gym Name" value={gym.name} />
-            <Field label="Address" value={gym.address} />
-            <Field label="Phone" value={gym.phone} />
-            <Field label="Email" value={gym.email} />
+            <div className="flex items-center gap-3 pb-2">
+              <Avatar name={user?.name ?? "User"} color={user?.avatarColor} />
+              <div>
+                <p className="font-medium">{user?.name}</p>
+                <p className="text-sm text-muted-foreground">{user?.email}</p>
+              </div>
+            </div>
+            {!isDev && (
+              <>
+                <Field label="Gym Name" value={gym.name} />
+                <Field label="Address" value={gym.address} />
+                <Field label="Phone" value={gym.phone} />
+              </>
+            )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader><CardTitle>Capacity & Hours</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <Field label="Maximum Capacity" value={String(gym.capacity)} />
-            <Field label="Operating Hours" value={gym.openHours} />
-          </CardContent>
-        </Card>
+        {!isDev && (
+          <Card>
+            <CardHeader><CardTitle>Capacity & Hours</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <Field label="Maximum Capacity" value={String(gym.capacity)} />
+              <Field label="Operating Hours" value={gym.openHours} />
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader><CardTitle>Notifications</CardTitle></CardHeader>
@@ -79,13 +73,9 @@ export default function SettingsPage() {
           <CardHeader><CardTitle>Demo Data</CardTitle></CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Reset all members, payments, attendance and community data back to the original seeded demo state.
+              Reset all demo data (members, payments, attendance, community, customers) back to its original seeded state.
             </p>
-            <Button
-              variant="destructive"
-              className="mt-4"
-              onClick={() => { resetDemo(); toast.success("Demo data reset"); }}
-            >
+            <Button variant="destructive" className="mt-4" onClick={() => { resetDemo(); toast.success("Demo data reset"); }}>
               <RotateCcw /> Reset Demo Data
             </Button>
           </CardContent>

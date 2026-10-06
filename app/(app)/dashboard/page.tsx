@@ -28,6 +28,8 @@ function greeting() {
 
 export default function DashboardPage() {
   const stats = useGymStore((s) => s.stats);
+  const user = useGymStore((s) => s.authUser);
+  const firstName = user?.name?.split(" ")[0] ?? "there";
   const crowdToday = useGymStore((s) => s.crowdToday);
   const crowdDaily = useGymStore((s) => s.crowdDaily);
   const challenges = useGymStore((s) => s.challenges);
@@ -49,7 +51,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <PageHeader title={`${greeting()}, Shan 👋`} subtitle="Here's what's happening at your gym today.">
+      <PageHeader title={`${greeting()}, ${firstName} 👋`} subtitle="Here's what's happening at your gym today.">
         <Link href="/community">
           <Button variant="outline"><Megaphone /> Announcement</Button>
         </Link>

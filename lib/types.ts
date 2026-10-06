@@ -1,6 +1,6 @@
 // ---- Shared ----
 export type ID = string;
-export type Role = "ADMIN" | "TRAINER" | "MEMBER";
+export type Role = "developer" | "owner" | "trainer" | "member";
 
 export interface User {
   id: ID;
@@ -8,6 +8,19 @@ export interface User {
   email: string;
   role: Role;
   avatarColor: string;
+}
+
+// A gym business subscribing to the platform (the developer's customer).
+export interface Customer {
+  id: ID;
+  gymName: string;
+  ownerName: string;
+  city: string;
+  planId: ID; // which SaaS plan they're on
+  status: "active" | "trial" | "churned";
+  members: number;
+  mrr: number; // monthly recurring revenue, INR
+  joinedAt: string; // ISO
 }
 
 export interface Gym {
@@ -25,6 +38,7 @@ export interface Gym {
 export interface MembershipPlan {
   id: ID;
   name: "Basic" | "Standard" | "Premium" | string;
+  tagline?: string; // one-line "who it's for"
   price: number; // monthly, INR
   features: string[];
   active: boolean;
